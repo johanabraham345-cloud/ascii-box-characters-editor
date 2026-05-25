@@ -1,365 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artcii Redo - Easy Box Character Painter</title>
-    <style>
-        :root {
-            --bg-color: #121214;
-            --panel-color: #1a1a1e;
-            --border-color: #2c2c35;
-            --text-color: #e1e1e6;
-            --accent-color: #4f46e5;
-            --accent-hover: #6366f1;
-        }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARTCII Box Studio</title>
+    <link rel="stylesheet" href="styles.css?v=4" />
+  </head>
+  <body>
+    <div id="app" class="shell">
+      <aside class="side-panel left-panel">
+        <header class="brand-card" aria-label="ARTCII Box Studio">
+          <div class="brand-title">ARTCII</div>
+          <div class="brand-subtitle">ASCII ART NEVER DIES!</div>
+        </header>
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            user-select: none;
-        }
+        <section class="project-card" aria-label="Projects">
+          <div class="section-label">Project</div>
+          <input id="projectName" class="project-name" aria-label="Project name" />
+          <div class="project-actions">
+            <button id="saveProject" class="icon-text" title="Save project">
+              <span aria-hidden="true">▣</span><span>Save</span>
+            </button>
+            <button id="newProject" class="icon-text" title="Start another project">
+              <span aria-hidden="true">＋</span><span>New</span>
+            </button>
+          </div>
+          <select id="projectList" class="project-list" aria-label="Saved projects"></select>
+        </section>
 
-        h1 {
-            margin-bottom: 5px;
-            font-size: 1.8rem;
-            font-weight: 700;
-            letter-spacing: -0.05em;
-        }
+        <section class="layer-card" aria-label="Layers">
+          <div id="layers" class="layers"></div>
+          <div class="layer-actions">
+            <button id="deleteLayer" class="icon-text danger" title="Delete selected layer">
+              <span aria-hidden="true">×</span><span>Delete</span>
+            </button>
+            <button id="addLayer" class="icon-text" title="New layer">
+              <span aria-hidden="true">＋</span><span>New Layer</span>
+            </button>
+          </div>
+        </section>
 
-        .subtitle {
-            color: #8f8f9d;
-            margin-bottom: 25px;
-            font-size: 0.9rem;
-        }
+        <div class="export-wrap">
+          <div id="exportMenu" class="export-menu" hidden>
+            <button id="copyEcho">Echo Command</button>
+            <button id="copyText">Copy Text</button>
+            <button id="downloadImage">Export Image</button>
+          </div>
+          <button id="exportToggle" class="export-button">EXPORT</button>
+        </div>
+      </aside>
 
-        /* Toolbar / Actions */
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: var(--panel-color);
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
+      <main class="stage-wrap">
+        <nav class="tool-pod" aria-label="Drawing tools">
+          <button id="toolDraw" class="tool-button active" title="Draw" aria-label="Draw">✎</button>
+          <button id="toolErase" class="tool-button" title="Erase" aria-label="Erase">⌫</button>
+          <button id="undo" class="tool-button compact" title="Undo" aria-label="Undo">↶</button>
+          <button id="redo" class="tool-button compact" title="Redo" aria-label="Redo">↷</button>
+        </nav>
 
-        button {
-            background-color: #26262b;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
+        <div id="stage" class="stage">
+          <div id="artFrame" class="art-frame">
+            <pre id="grid" class="grid" aria-label="Drawing grid"></pre>
+          </div>
+        </div>
+      </main>
 
-        button:hover:not(:disabled) {
-            background-color: #323239;
-            border-color: #444450;
-        }
-
-        button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        button.primary {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        button.primary:hover {
-            background-color: var(--accent-hover);
-        }
-
-        /* Main Workspace App Grid Layout */
-        .app-container {
-            display: flex;
-            gap: 20px;
-            max-width: 1000px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        /* Palette styling */
-        .palette-panel {
-            background: var(--panel-color);
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 10px;
-            width: 160px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .palette-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #8f8f9d;
-            font-weight: 700;
-        }
-
-        .char-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .palette-btn {
-            aspect-ratio: 1;
-            font-family: monospace;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-        }
-
-        .palette-btn.active {
-            background-color: var(--accent-color);
-            border-color: var(--accent-hover);
-            box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);
-        }
-
-        /* Drawing Canvas Grid */
-        .canvas-container {
-            background: var(--panel-color);
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 10px;
-            overflow: auto;
-        }
-
-        #canvas {
-            display: grid;
-            background-color: #141416;
-            border: 1px solid #222227;
-        }
-
-        .cell {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 18px;
-            line-height: 20px;
-            color: #ffffff;
-            cursor: crosshair;
-            border-right: 1px solid #1c1c21;
-            border-bottom: 1px solid #1c1c21;
-            box-sizing: border-box;
-        }
-
-        .cell:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-    </style>
-</head>
-<body>
-
-    <h1>Artcii <span style="color: var(--accent-hover)">Redo</span></h1>
-    <div class="subtitle">Click and drag over the grid to paint boxes seamlessly.</div>
-
-    <div class="toolbar">
-        <button id="btn-undo" onclick="undo()">↩ Undo</button>
-        <button id="btn-redo" onclick="redo()">↪ Redo</button>
-        <button onclick="clearCanvas()" style="margin-left: 15px;">Clear</button>
-        <button id="btn-copy" class="primary" onclick="copyCanvas()">📋 Copy Art</button>
-    </div>
-
-    <div class="app-container">
-        <div class="palette-panel">
-            <div class="palette-title">Lines & Joints</div>
-            <div class="char-grid" id="palette-lines"></div>
-
-            <div class="palette-title">Blocks & Fills</div>
-            <div class="char-grid" id="palette-blocks"></div>
-
-            <div class="palette-title">Tools</div>
-            <button id="btn-eraser" style="width:100%; font-size:0.8rem;" onclick="selectEraser()">Eraser (Space)</button>
+      <aside class="side-panel settings-panel">
+        <div class="section-label">Dimensions</div>
+        <div class="dimension-row">
+          <input id="rowsInput" class="number-box" type="number" min="1" max="60" aria-label="Rows" />
+          <span class="times">×</span>
+          <input id="colsInput" class="number-box" type="number" min="1" max="120" aria-label="Columns" />
         </div>
 
-        <div class="canvas-container">
-            <div id="canvas"></div>
+        <div class="section-label">Character</div>
+        <div class="character-row">
+          <div id="brushPreview" class="brush-preview" title="Type a character">
+            <input id="brushInput" aria-label="Brush character" maxlength="4" />
+          </div>
+          <div class="character-actions">
+            <button id="nerdFont" class="pill-button">Nerd Font</button>
+            <button id="emojiToggle" class="pill-button">Emoji</button>
+          </div>
         </div>
-    </div>
+        <div id="emojiPanel" class="emoji-panel" hidden></div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const rows = 22;
-        const cols = 40;
-
-        // Character groups for the palette tool setup
-        const lineChars = ['─', '│', '┌', '┐', '└', '┘', '├', '┤', '┬', '┴', '┼'];
-        const blockChars = ['█', '▄', '▀', '▌', '▐', '░', '▒', '▓'];
-
-        let selectedChar = '─';
-        let isDrawing = false;
-        let hasStrokeChanges = false;
-
-        // Undo & Redo History Buffers
-        let history = [];
-        let historyIndex = -1;
-
-        // Initialize App UI Elements
-        function init() {
-            canvas.style.gridTemplateColumns = `repeat(${cols}, 20px)`;
-            
-            // Build Canvas Grid Matrix
-            for (let i = 0; i < rows * cols; i++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.textContent = ' ';
-                
-                // Mouse Interactivity mapping
-                cell.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    isDrawing = true;
-                    cell.textContent = selectedChar;
-                    hasStrokeChanges = true;
-                });
-
-                cell.addEventListener('mouseenter', () => {
-                    if (isDrawing) {
-                        cell.textContent = selectedChar;
-                        hasStrokeChanges = true;
-                    }
-                });
-
-                canvas.appendChild(cell);
-            }
-
-            // Global trigger to end drawing & finalize stroke state step
-            window.addEventListener('mouseup', () => {
-                if (isDrawing) {
-                    isDrawing = false;
-                    if (hasStrokeChanges) {
-                        saveState();
-                        hasStrokeChanges = false;
-                    }
-                }
-            });
-
-            // Populate Palette Elements UI
-            setupPaletteGroup('palette-lines', lineChars);
-            setupPaletteGroup('palette-blocks', blockChars);
-            
-            // Set initial dynamic brush active look
-            document.querySelector(`[data-char="${selectedChar}"]`)?.classList.add('active');
-
-            // Capture initial empty layout state
-            saveState();
-        }
-
-        function setupPaletteGroup(containerId, charArray) {
-            const container = document.getElementById(containerId);
-            charArray.forEach(char => {
-                const btn = document.createElement('button');
-                btn.classList.add('palette-btn');
-                btn.textContent = char;
-                btn.setAttribute('data-char', char);
-                btn.onclick = () => selectCharacter(char, btn);
-                container.appendChild(btn);
-            });
-        }
-
-        function selectCharacter(char, buttonEl) {
-            selectedChar = char;
-            document.querySelectorAll('.palette-btn, #btn-eraser').forEach(b => b.classList.remove('active'));
-            buttonEl.classList.add('active');
-        }
-
-        function selectEraser() {
-            selectedChar = ' ';
-            document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-eraser').classList.add('active');
-        }
-
-        /* History Management Engine (Undo/Redo System) */
-        function saveState() {
-            const currentCellsState = Array.from(document.querySelectorAll('.cell')).map(c => c.textContent);
-            
-            // Erase alternative path future changes if drawing after executing an undo action
-            if (historyIndex < history.length - 1) {
-                history = history.slice(0, historyIndex + 1);
-            }
-            
-            history.push(currentCellsState);
-            historyIndex++;
-            updateUndoRedoButtons();
-        }
-
-        function undo() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                applyState(history[historyIndex]);
-            }
-            updateUndoRedoButtons();
-        }
-
-        function redo() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                applyState(history[historyIndex]);
-            }
-            updateUndoRedoButtons();
-        }
-
-        function applyState(state) {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach((cell, index) => {
-                cell.textContent = state[index];
-            });
-        }
-
-        function updateUndoRedoButtons() {
-            document.getElementById('btn-undo').disabled = (historyIndex <= 0);
-            document.getElementById('btn-redo').disabled = (historyIndex >= history.length - 1);
-        }
-
-        function clearCanvas() {
-            if(confirm("Are you sure you want to clear your current drawing?")) {
-                document.querySelectorAll('.cell').forEach(c => c.textContent = ' ');
-                saveState();
-            }
-        }
-
-        /* Export System */
-        function copyCanvas() {
-            const cells = document.querySelectorAll('.cell');
-            let textOutput = '';
-            
-            for (let r = 0; r < rows; r++) {
-                let rowText = '';
-                for (let c = 0; c < cols; c++) {
-                    rowText += cells[r * cols + c].textContent;
-                }
-                // Trim trailing space fields on lines to reduce clipboard noise size
-                textOutput += rowText.trimEnd() + '\n';
-            }
-
-            navigator.clipboard.writeText(textOutput.trimEnd()).then(() => {
-                const btn = document.getElementById('btn-copy');
-                btn.textContent = '✅ Copied!';
-                setTimeout(() => btn.textContent = '📋 Copy Art', 2000);
-            });
-        }
-
-        // Run Init setup routines on payload ready
-        init();
-    </script>
-</body>
-</html>
+        <div class="section-label">Box Drawing</div>
+        <div class="box-drawing">
+          <div class="box-presets" aria-label="Box drawing presets">
+            <button data-preset="cornerTl">┌</button>
+            <button data-preset="horizontal">─</button>
+            <button data-preset="cornerTr">┐</button>
+            <button data-preset="vertical">│</button>
+            <button data-preset="cornerBl">└</button>
+            <button id="specialChar">┄</button>
+            <button id="styleCycle" title="Change line style">○</button>
+            <button data-preset="cornerBr">┘</button>
+          </div>
